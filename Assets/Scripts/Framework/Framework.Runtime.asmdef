@@ -1,0 +1,16 @@
+{
+    "name": "Milkbath.Framework",
+    "rootNamespace": "Framework",
+    "references": [
+        "MackySoft.SerializeReferenceExtensions"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
