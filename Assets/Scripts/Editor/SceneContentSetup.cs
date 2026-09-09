@@ -188,7 +188,7 @@ namespace MilkBath.Editor
             label.alignment = TextAnchor.MiddleCenter;
             label.fontSize = fontSize;
             label.color = color;
-            label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         }
 
         private static MaterialSet CreateMaterials()
