@@ -15,6 +15,7 @@ namespace MilkBath.Editor
         private const string ScenesFolder = "Assets/Scenes";
         private const string MainMenuScenePath = ScenesFolder + "/MainMenuScene.unity";
         private const string GameScenePath = ScenesFolder + "/GameScene.unity";
+        private const string SampleScenePath = ScenesFolder + "/SampleScene.unity";
         private const string PostProcessingProfilePath = "Assets/Settings/SampleSceneProfile.asset";
 
         public static void ConfigureScenes()
@@ -22,6 +23,7 @@ namespace MilkBath.Editor
             EnsureFolder(ScenesFolder);
             CreateScene(MainMenuScenePath, "MainMenu", typeof(MainMenuController));
             CreateScene(GameScenePath, "Game", typeof(GameSceneController));
+            ConfigureSampleScene();
 
             EditorBuildSettings.scenes = new[]
             {
@@ -42,7 +44,16 @@ namespace MilkBath.Editor
             root.AddComponent(controllerType);
 
             ConfigurePostProcessing();
+            SceneContentSetup.Configure(scene, rootName == "MainMenu" ? SceneContentVariant.MainMenu : SceneContentVariant.Game);
             EditorSceneManager.SaveScene(scene, scenePath);
+        }
+
+        private static void ConfigureSampleScene()
+        {
+            Scene scene = EditorSceneManager.OpenScene(SampleScenePath, OpenSceneMode.Single);
+            ConfigurePostProcessing();
+            SceneContentSetup.Configure(scene, SceneContentVariant.Sample);
+            EditorSceneManager.SaveScene(scene);
         }
 
         private static void ConfigurePostProcessing()
