@@ -1,6 +1,8 @@
 #if UNITY_EDITOR
 using UnityEditor;
+using MilkBath.Scenes;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -22,13 +24,21 @@ namespace MilkBath.Editor
         {
             RemoveExistingContent(scene);
 
-            GameObject contentRoot = new GameObject(ContentRootName);
-            SceneManager.MoveGameObjectToScene(contentRoot, scene);
+            if (variant == SceneContentVariant.MainMenu)
+            {
+                CreateMainMenuUi();
+            }
+            else
+            {
+                GameObject contentRoot = new GameObject(ContentRootName);
+                SceneManager.MoveGameObjectToScene(contentRoot, scene);
 
-            MaterialSet materials = CreateMaterials();
-            CreateEnvironment(contentRoot.transform, materials, variant);
+                MaterialSet materials = CreateMaterials();
+                CreateEnvironment(contentRoot.transform, materials, variant);
+                ConfigureLighting(contentRoot.transform, materials, variant);
+            }
+
             ConfigureCamera(variant);
-            ConfigureLighting(contentRoot.transform, materials, variant);
 
             if (variant == SceneContentVariant.Sample)
                 CreateSampleOverlay();
@@ -47,6 +57,62 @@ namespace MilkBath.Editor
             GameObject overlay = GameObject.Find("SampleSceneOverlay");
             if (overlay != null)
                 Object.DestroyImmediate(overlay);
+
+            GameObject menuCanvas = GameObject.Find("MainMenuCanvas");
+            if (menuCanvas != null)
+                Object.DestroyImmediate(menuCanvas);
+
+            GameObject eventSystem = GameObject.Find("EventSystem");
+            if (eventSystem != null)
+                Object.DestroyImmediate(eventSystem);
+        }
+
+        private static void CreateMainMenuUi()
+        {
+            GameObject canvasObject = new GameObject("MainMenuCanvas");
+            Canvas canvas = canvasObject.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+            CanvasScaler scaler = canvasObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            canvasObject.AddComponent<GraphicRaycaster>();
+
+            Image background = CreatePanel(canvas.transform, "Background", new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero, new Color(0.025f, 0.04f, 0.09f, 1f));
+            background.rectTransform.anchorMin = Vector2.zero;
+            background.rectTransform.anchorMax = Vector2.one;
+            background.rectTransform.offsetMin = Vector2.zero;
+            background.rectTransform.offsetMax = Vector2.zero;
+
+            CreateLabel(canvas.transform, "MILKBATH", new Vector2(0f, 125f), new Vector2(1050f, 100f), 72, Color.white);
+            CreateLabel(canvas.transform, "A calm, luminous playground", new Vector2(0f, 42f), new Vector2(900f, 50f), 24, new Color(0.65f, 0.8f, 0.95f, 1f));
+
+            Button startButton = CreateButton(canvas.transform, "START GAME", new Vector2(0f, -70f));
+            MainMenuController controller = Object.FindFirstObjectByType<MainMenuController>();
+            if (controller != null)
+                controller.SetStartButton(startButton);
+
+            CreateLabel(canvas.transform, "URP ONLINE  //  BUILD 0.1.0", new Vector2(0f, -430f), new Vector2(900f, 40f), 16, new Color(0.45f, 0.58f, 0.72f, 1f));
+
+            GameObject eventSystemObject = new GameObject("EventSystem");
+            eventSystemObject.AddComponent<EventSystem>();
+            eventSystemObject.AddComponent<StandaloneInputModule>();
+        }
+
+        private static Image CreatePanel(Transform parent, string name, Vector2 anchor, Vector2 offsetMin, Vector2 offsetMax, Color color)
+        {
+            GameObject panelObject = new GameObject(name);
+            panelObject.transform.SetParent(parent, false);
+
+            RectTransform rectTransform = panelObject.AddComponent<RectTransform>();
+            rectTransform.anchorMin = anchor;
+            rectTransform.anchorMax = anchor;
+            rectTransform.offsetMin = offsetMin;
+            rectTransform.offsetMax = offsetMax;
+
+            Image image = panelObject.AddComponent<Image>();
+            image.color = color;
+            return image;
         }
 
         private static void CreateEnvironment(Transform parent, MaterialSet materials, SceneContentVariant variant)
@@ -168,11 +234,35 @@ namespace MilkBath.Editor
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
 
-            CreateLabel(canvas.transform, "MILKBATH // PLAYGROUND", new Vector2(0f, -430f), 26, new Color(0.75f, 0.9f, 1f, 1f));
-            CreateLabel(canvas.transform, "URP SHOWCASE SCENE", new Vector2(0f, -470f), 16, new Color(0.6f, 0.68f, 0.8f, 1f));
+            CreateLabel(canvas.transform, "MILKBATH // PLAYGROUND", new Vector2(0f, -430f), new Vector2(900f, 50f), 26, new Color(0.75f, 0.9f, 1f, 1f));
+            CreateLabel(canvas.transform, "URP SHOWCASE SCENE", new Vector2(0f, -470f), new Vector2(900f, 40f), 16, new Color(0.6f, 0.68f, 0.8f, 1f));
         }
 
-        private static void CreateLabel(Transform parent, string text, Vector2 anchoredPosition, int fontSize, Color color)
+        private static Button CreateButton(Transform parent, string label, Vector2 anchoredPosition)
+        {
+            GameObject buttonObject = new GameObject(label);
+            buttonObject.transform.SetParent(parent, false);
+
+            RectTransform rectTransform = buttonObject.AddComponent<RectTransform>();
+            rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            rectTransform.sizeDelta = new Vector2(320f, 80f);
+            rectTransform.anchoredPosition = anchoredPosition;
+
+            Image image = buttonObject.AddComponent<Image>();
+            image.color = new Color(0.12f, 0.35f, 0.5f, 1f);
+
+            Button button = buttonObject.AddComponent<Button>();
+            ColorBlock colors = button.colors;
+            colors.normalColor = new Color(0.12f, 0.35f, 0.5f, 1f);
+            colors.highlightedColor = new Color(0.2f, 0.55f, 0.75f, 1f);
+            colors.pressedColor = new Color(0.08f, 0.22f, 0.35f, 1f);
+            button.colors = colors;
+            CreateLabel(buttonObject.transform, label, Vector2.zero, new Vector2(320f, 80f), 24, Color.white);
+            return button;
+        }
+
+        private static void CreateLabel(Transform parent, string text, Vector2 anchoredPosition, Vector2 size, int fontSize, Color color)
         {
             GameObject labelObject = new GameObject(text + " Label");
             labelObject.transform.SetParent(parent, false);
@@ -180,7 +270,7 @@ namespace MilkBath.Editor
             RectTransform rectTransform = labelObject.AddComponent<RectTransform>();
             rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
             rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-            rectTransform.sizeDelta = new Vector2(900f, 50f);
+            rectTransform.sizeDelta = size;
             rectTransform.anchoredPosition = anchoredPosition;
 
             Text label = labelObject.AddComponent<Text>();

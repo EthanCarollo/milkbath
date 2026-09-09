@@ -8,10 +8,21 @@ namespace MilkBath.Scenes
     {
         private const string GameSceneName = "GameScene";
 
+        [SerializeField]
+        private Button startButton;
+
         private void Start()
         {
             SceneTransitioner transitioner = SceneTransitioner.GetOrCreate();
-            CreateMenuUi(transitioner);
+            if (startButton == null)
+                CreateMenuUi(transitioner);
+            else
+                startButton.onClick.AddListener(() => transitioner.LoadScene(GameSceneName));
+        }
+
+        public void SetStartButton(Button button)
+        {
+            startButton = button;
         }
 
         private static void CreateMenuUi(SceneTransitioner transitioner)
