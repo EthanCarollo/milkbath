@@ -5,6 +5,8 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace MilkBath.Editor
 {
@@ -13,6 +15,7 @@ namespace MilkBath.Editor
         private const string ScenesFolder = "Assets/Scenes";
         private const string MainMenuScenePath = ScenesFolder + "/MainMenuScene.unity";
         private const string GameScenePath = ScenesFolder + "/GameScene.unity";
+        private const string PostProcessingProfilePath = "Assets/Settings/SampleSceneProfile.asset";
 
         public static void ConfigureScenes()
         {
@@ -37,7 +40,35 @@ namespace MilkBath.Editor
             GameObject root = new GameObject(rootName);
             root.AddComponent<SceneTransitioner>();
             root.AddComponent(controllerType);
+
+            ConfigurePostProcessing();
             EditorSceneManager.SaveScene(scene, scenePath);
+        }
+
+        private static void ConfigurePostProcessing()
+        {
+            Camera mainCamera = Camera.main;
+            if (mainCamera == null)
+                throw new MissingReferenceException("The generated scene does not contain a MainCamera.");
+
+            UniversalAdditionalCameraData cameraData = mainCamera.GetComponent<UniversalAdditionalCameraData>();
+            if (cameraData == null)
+                cameraData = mainCamera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+
+            cameraData.renderType = CameraRenderType.Base;
+            cameraData.renderPostProcessing = true;
+            cameraData.volumeLayerMask = ~0;
+
+            VolumeProfile profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(PostProcessingProfilePath);
+            if (profile == null)
+                throw new MissingReferenceException($"Post-processing profile not found at '{PostProcessingProfilePath}'.");
+
+            GameObject volumeObject = new GameObject("Global Volume");
+            Volume volume = volumeObject.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 0f;
+            volume.weight = 1f;
+            volume.sharedProfile = profile;
         }
 
         private static void EnsureFolder(string folderPath)
