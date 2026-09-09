@@ -74,8 +74,30 @@ namespace MilkBath.Editor
             if (profile == null)
                 throw new MissingReferenceException($"Post-processing profile not found at '{PostProcessingProfilePath}'.");
 
-            GameObject volumeObject = new GameObject("Global Volume");
-            Volume volume = volumeObject.AddComponent<Volume>();
+            Volume volume = null;
+            Volume[] sceneVolumes = Object.FindObjectsByType<Volume>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (Volume candidate in sceneVolumes)
+            {
+                if (candidate.gameObject.scene != SceneManager.GetActiveScene() || !candidate.isGlobal)
+                    continue;
+
+                if (volume == null)
+                {
+                    volume = candidate;
+                    volume.gameObject.name = "Global Volume";
+                }
+                else
+                {
+                    Object.DestroyImmediate(candidate.gameObject);
+                }
+            }
+
+            if (volume == null)
+            {
+                GameObject volumeObject = new GameObject("Global Volume");
+                volume = volumeObject.AddComponent<Volume>();
+            }
+
             volume.isGlobal = true;
             volume.priority = 0f;
             volume.weight = 1f;
